@@ -24,8 +24,9 @@ jobs:
         run: |
           mkdir build-project
           unzip -q TKCoolBar-Safe-SMS-Release-v2.zip -d build-project
-          echo "Project extracted:"
-          find build-project -maxdepth 3 -type f | head -50
+          echo "Project files:"
+          ls -la build-project
+          ls -la build-project/app
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -34,21 +35,20 @@ jobs:
 
       - name: Enable AndroidX
         run: |
-          cd build-project/TKCoolBarFinal
+          cd build-project
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
 
       - name: Build APK
         run: |
-          cd build-project/TKCoolBarFinal
-          chmod +x gradlew
-          ./gradlew clean assembleDebug
+          cd build-project
+          gradle clean assembleDebug
 
       - name: Verify APK
         run: |
-          APK=$(find build-project/TKCoolBarFinal/app/build/outputs/apk/debug -name "*.apk" | head -1)
+          APK=$(find build-project/app/build/outputs/apk/debug -name "*.apk" | head -1)
           echo "APK found: $APK"
-          if unzip -p "$APK" AndroidManifest.xml | strings | grep -q "android.permission.SEND_SMS"; then
+          if unzip -p "$APK" AndroidManifest.xml | strings | grep -q "SEND_SMS"; then
             echo "ERROR: SEND_SMS permission found!"
             exit 1
           fi
@@ -58,4 +58,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TKCoolBar-Safe-SMS-APK
-          path: build-project/TKCoolBarFinal/app/build/outputs/apk/debug/*.apk
+          path: build-project/app/build/outputs/apk/debug/*.apk
